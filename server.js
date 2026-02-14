@@ -55,6 +55,25 @@ function normalizeText(value, max = 64) {
   return s.slice(0, Math.max(1, Math.min(512, Math.round(Number(max) || 64))));
 }
 
+function normalizeCardId(value) {
+  const s = normalizeText(value, 96);
+  if (!s) return "";
+  return s.replace(/[^\w.-]/g, "");
+}
+
+function extractCardId(cardLike) {
+  const row = cardLike && typeof cardLike === "object" ? cardLike : {};
+  return normalizeCardId(
+    row?.id
+    ?? row?.cardId
+    ?? row?.card_id
+    ?? row?.slug
+    ?? row?.uid
+    ?? row?.nameId
+    ?? row?.code
+  );
+}
+
 function normalizeAvatar(value) {
   const s = normalizeText(value, 512);
   if (!s) return "";
@@ -71,13 +90,24 @@ function normalizeAvatar(value) {
   return "";
 }
 
+function normalizeCardArtFile(value) {
+  const s = normalizeText(value, 256);
+  if (!s) return "";
+  if (/^[\w.-]+\.(?:webp|png|jpe?g|avif)$/i.test(s)) return `assets/cards/arts/${s}`;
+  const normalized = normalizeAvatar(s);
+  return normalized || "";
+}
+
 function normalizeCardsPreview(cardsLike) {
   if (!Array.isArray(cardsLike)) return [];
   const out = [];
   for (const row of cardsLike.slice(0, 9)) {
-    const id = normalizeText(row?.id ?? row?.cardId ?? row?.card_id, 96);
+    const id = extractCardId(row);
     const title = normalizeText(row?.title ?? row?.name, 48) || "Карта";
-    const art = normalizeAvatar(row?.art ?? row?.image ?? row?.img ?? row?.avatar) || "";
+    const directArt = normalizeAvatar(row?.art ?? row?.image ?? row?.img ?? row?.avatar ?? row?.cover) || "";
+    const artFile = normalizeCardArtFile(row?.artFile ?? row?.art_file);
+    const artById = id ? `assets/cards/arts/${id}.webp` : "";
+    const art = artById || artFile || directArt;
     const power = normalizePower(row?.power ?? row?.basePower);
     const level = normalizePower(row?.level);
     const rarity = normalizeText(row?.rarity ?? row?.quality, 24);
@@ -86,6 +116,7 @@ function normalizeCardsPreview(cardsLike) {
       id,
       title,
       art,
+      artFile,
       power,
       level,
       rarity,
