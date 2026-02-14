@@ -58,7 +58,14 @@ function normalizeText(value, max = 64) {
 function normalizeAvatar(value) {
   const s = normalizeText(value, 512);
   if (!s) return "";
-  if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("assets/") || s.startsWith("../../assets/")) {
+  if (
+    s.startsWith("http://")
+    || s.startsWith("https://")
+    || s.startsWith("assets/")
+    || s.startsWith("./assets/")
+    || s.startsWith("/assets/")
+    || s.startsWith("../../assets/")
+  ) {
     return s;
   }
   return "";
@@ -68,6 +75,7 @@ function normalizeCardsPreview(cardsLike) {
   if (!Array.isArray(cardsLike)) return [];
   const out = [];
   for (const row of cardsLike.slice(0, 9)) {
+    const id = normalizeText(row?.id ?? row?.cardId ?? row?.card_id, 96);
     const title = normalizeText(row?.title ?? row?.name, 48) || "Карта";
     const art = normalizeAvatar(row?.art ?? row?.image ?? row?.img ?? row?.avatar) || "";
     const power = normalizePower(row?.power ?? row?.basePower);
@@ -75,6 +83,7 @@ function normalizeCardsPreview(cardsLike) {
     const rarity = normalizeText(row?.rarity ?? row?.quality, 24);
     const element = normalizeText(row?.element, 16).toLowerCase();
     out.push({
+      id,
       title,
       art,
       power,
@@ -296,3 +305,4 @@ if (typeof timer.unref === "function") timer.unref();
 httpServer.listen(PORT, () => {
   console.log("Server listening on", PORT);
 });
+
